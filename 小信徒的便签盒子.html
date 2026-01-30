@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>来自小信徒の便签盒子</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "SimSun", sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            background-color: #b3a4e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .outer-big-box {
+            width: 92%;
+            max-width: 450px;
+            height: 460px;
+            background-color: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 16px;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.03);
+            position: relative;
+            padding: 25px 20px 20px;
+            overflow: hidden; /* 隐藏盒子外的初始图片，避免漏出 */
+        }
+        .box-title {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            white-space: nowrap;
+        }
+        .inner-note-box {
+            width: 80%;
+            height: 150px;
+            background-color: #c9c7ec;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, calc(-50% + 30px));
+            overflow: hidden;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .note-box-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #a17ae8;
+            letter-spacing: 2px;
+            transform: translateY(-8px);
+        }
+        .card {
+            width: 70%;
+            height: 130px;
+            background-color: #edefdb;
+            border: 1px solid #fbd89f;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(251, 216, 159, 0.35);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px;
+            transition: transform 0.6s cubic-bezier(0.2, 0.85, 0.4, 1);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .card.pop {
+            transform: translate(-50%, calc(-50% - 90px));
+        }
+        #pop-btn {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 35px;
+            background-color: #f7f7f4;
+            color: #8045e6;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(255, 109, 63, 0.25);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            touch-action: manipulation;
+            z-index: 3;
+        }
+        #pop-btn:active {
+            transform: translateX(-50%) translateY(3px) scale(0.98);
+            box-shadow: 0 1px 3px rgba(255, 109, 63, 0.4);
+            background-color: #f9f9f9;
+        }
+
+        /* 图片核心样式：透明+置顶+滑入滑出动画（关键修复） */
+        .box-left-img {
+            position: absolute;
+            left: 20px;
+            bottom: 20px; /* 最终显示位置：盒子左下内侧 */
+            z-index: 99; /* 置顶不被遮挡 */
+            width: 80px;
+            height: auto;
+            background: transparent; /* 彻底去背景 */
+            box-shadow: none;
+            border-radius: 8px;
+            /* 动画和便签完全同步 */
+            transition: all 1s cubic-bezier(0.2, 0.85, 0.4, 1);
+            transform: translateY(100px); /* 初始位置：盒子下方（完全隐藏） */
+            opacity: 0; /* 初始透明 */
+        }
+        /* 显示状态：上滑到目标位置+完全不透明 */
+        .box-left-img.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .box-left-img img {
+            width: 100%;
+            height: auto;
+            object-fit: contain; /* 保留透明背景，不变形 */
+            background: transparent;
+            border-radius: 8px;
+            /* 便签文字样式：支持<br>换行+居中 */
+.card-text {
+    font-size: 10px;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.8; /* 行间距拉开，换行更美观 */
+    text-align: center;
+}
+/* 局部划掉样式（想划哪段套这个类） */
+.strike {
+    text-decoration: line-through;
+    text-decoration-color: #4593e6; /* 和按钮同色，更协调 */
+    text-decoration-thickness: 2px;
+}
+        }
+    </style>
+</head>
+<body>
+    <div class="outer-big-box">
+        <div class="box-title">小信徒の便签盒</div>
+        <div class="card">
+            <div class="card-text" id="random-text"></div>
+        </div>
+        <div class="inner-note-box">
+            <div class="note-box-text"><span style="padding-left: 5.2vw;">捡到请立刻送至</span><br>平安京天才阴阳师居所</div>
+            <button id="pop-btn">弹出便签</button>
+        </div>
+        <!-- 图片容器：src保持你的图片名 -->
+        <div class="box-left-img" id="boxLeftImg">
+            <img src="xiaoxintu.jpg.jpg" alt="盒子左下角图片">
+        </div>
+    </div>
+
+    <script>
+        const popBtn = document.getElementById('pop-btn');
+        const card = document.querySelector('.card');
+        const randomTextEl = document.getElementById('random-text');
+        const boxLeftImg = document.getElementById('boxLeftImg');
+        let isPopped = false;
+
+        // 好运文案库
+        const luckTextLibrary = [
+            "今日汇报<br>大阴阳师晴明<br>是魅魔...?", 
+            "巷尾樱饼店这周<br>买一送一<br>八岐大蛇需要代购<br>八份（每天吃这么多真好奇他的体重..）",
+            "灯姐故事会<br>今晚八点开讲<br>不能迟到！！！",
+            "不能随便吐槽<br>八岐大蛇<br>他听得见....可恶",
+            "明早要和山兔，孟婆去晨跑<br>要早起了...", 
+            "晒太阳的好地方：<br>京都屋顶<br>七角山", 
+            "(^_^)", 
+            "今日rua蛇魔(100/100)",
+            "下周阴阳术测试<br>考等完了你信姐必须<br>狠狠奖励自己", 
+            "晚上寿司店<br>买一送一", 
+            "最近有阴阳师说<br>八岐大蛇<br>有股魅劲<br>哈哈哈哈哈", 
+            "晚上<br>也要投喂蛇魔<br>哎呀好萌啊小蛇魔",
+            "八岐大蛇好烦<br>这周不理他了<br>蛇精病一个讨厌...",
+            "武士刀豁口了...<br>记得送去修<br>应该可以找蛇神报销吧",
+            "我去<br>写的同人火了...<br>希望那些大妖不在意这个",
+            "单人退治土蜘蛛<br>难道我真的是天才！",
+            "讨厌那个同门师兄<br>讨厌讨厌讨厌讨厌<br>讨厌讨厌讨厌讨厌他讨厌讨厌讨厌讨厌",
+            "周五要述职",
+            "昨天吃的三色团<br>好美味，今天还吃",
+            "八岐大蛇<br>这样说话<br>真的没事吗...",
+            "和神乐一起买的果干<br>30r",
+            "周六行程：<br>跟踪晴明<br>喂蛇魔<br>代购樱饼（？）",
+            "周四要和缘结神大人共进午餐<br>不能忘了！"
+        ];
+
+        // 随机获取文案
+        function getRandomLuckText() {
+            const randomIndex = Math.floor(Math.random() * luckTextLibrary.length);
+            return luckTextLibrary[randomIndex];
+        }
+
+        // 点击事件：无限触发+动画同步（无任何多余逻辑）
+        popBtn.addEventListener('click', () => {
+            if (!isPopped) {
+                // 便签上滑+文案刷新
+                randomTextEl.innerHTML = getRandomLuckText();
+                card.classList.add('pop');
+                popBtn.innerText = '收回便签';
+                // 图片上滑出现
+                boxLeftImg.classList.add('show');
+                isPopped = true;
+            } else {
+                // 便签下滑收回
+                card.classList.remove('pop');
+                popBtn.innerText = '弹出便签';
+                // 图片下滑消失
+                boxLeftImg.classList.remove('show');
+                isPopped = false;
+            }
+        });
+    </script>
+</body>
+</html>
